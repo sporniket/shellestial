@@ -1,0 +1,76 @@
+#!/bin/bash
+#================================================
+#Test Campaign runner
+#================================================
+
+#path management (OWD = Origin Working Directory, CWD = Command Working Directory)
+OWD="$(pwd)"
+CWD="$(dirname $0)"
+cd $CWD
+
+#setting up reporting
+REPORT="$(pwd)/campaign.log"
+FAILED=""
+
+#console output formatting
+COLOR_NORMAL="\e[96m"
+COLOR_OK="\e[92m"
+COLOR_FAILED="\e[91m"
+COLOR_RESET="\e[0m"
+
+MARK_OK="=[  ${COLOR_OK}OK${COLOR_RESET}  ]="
+MARK_KO="=[${COLOR_FAILED}FAILED${COLOR_RESET}]="
+
+#log formatting
+LOG_PATTERN="%s> %-58s\n"
+
+suite_name() {
+  result=$(basename $1)
+  echo "${result#'suite'}"
+}
+
+show-report() {
+  echo -e "$(cat $1)"
+  echo -e "\n"
+}
+
+if [ -f "$REPORT" ]; then
+  rm $REPORT
+fi
+
+#Now starts
+echo -e "\n\n####################[ ${COLOR_OK}Shellestial Test Runner v1.0.0${COLOR_RESET} ]####################\n"
+
+for suite in $(find . -maxdepth 1 -name "suite*" -type d); do
+  SUITE_NAME="$(suite_name $suite)"
+  echo -e "$COLOR_NORMAL========> $SUITE_NAME <========$COLOR_RESET"
+  SUBREPORT="$REPORT-$SUITE_NAME"
+
+  echo -en "\e[34m"
+  cd "$suite"
+  ./describe "$SUBREPORT"
+
+  if [ $? -eq 0 ]; then
+    echo -e "$COLOR_RESET--------$MARK_OK--------$COLOR_RESET"
+    printf "$LOG_PATTERN" "$MARK_OK" "$SUITE_NAME" >> "$REPORT"
+  else
+    echo -e "$COLOR_RESET--------$MARK_KO--------$COLOR_RESET"
+    printf "$LOG_PATTERN" "$MARK_KO" "$SUITE_NAME" >> "$REPORT"
+    FAILED="$SUITE_NAME $FAILED"
+  fi
+  cd ..
+
+  if [ -f "$SUBREPORT" ]; then
+    cat "$SUBREPORT" >> "$REPORT"
+  fi
+done
+
+echo -e "\n\n\n### SUMMARY REPORT ###\n"
+if [ -n "$FAILED" ]; then
+  echo -e "There are failures : ${COLOR_FAILED}$FAILED${COLOR_RESET}\n"
+  show-report "$REPORT"
+  cd $OWD
+  exit 1
+fi
+show-report "$REPORT"
+cd $OWD

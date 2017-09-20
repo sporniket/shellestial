@@ -1,0 +1,54 @@
+#!/bin/bash
+#================================================
+#Test Suite runner
+#================================================
+REPORT="$1"
+FAILED=""
+
+#console output formatting
+COLOR_NORMAL="\e[36m"
+COLOR_OK="\e[32m"
+COLOR_FAILED="\e[31m"
+COLOR_RESET="\e[0m"
+COLOR_TRACE="\e[37m"
+
+MARK_OK="    ${COLOR_OK}OK${COLOR_RESET}    "
+MARK_KO="  ${COLOR_FAILED}FAILED${COLOR_RESET}  "
+
+#log formatting
+LOG_PATTERN="%s  %-58s\n"
+
+suite_name() {
+  result=$(basename $1)
+  echo "${result#'test'}"
+}
+
+if [ -f "$REPORT" ]; then
+  rm $REPORT
+fi
+
+for suite in $(find . -maxdepth 1 -name "test*" -type f); do
+  if [ ! -x "$suite" ]; then
+    echo -e "${COLOR_NORMAL}skip $suite$COLOR_RESET"
+    continue
+  fi
+  SUITE_NAME="$(suite_name $suite)"
+  echo -e "${COLOR_NORMAL}$SUITE_NAME$COLOR_RESET"
+
+  echo -en "$COLOR_TRACE"
+  $suite
+
+  if [ $? -eq 0 ]; then
+    echo -e "$COLOR_RESET----$MARK_OK----$COLOR_RESET"
+    printf "$LOG_PATTERN" "$MARK_OK" "$SUITE_NAME" >> $REPORT
+  else
+    echo -e "$COLOR_RESET----$MARK_KO----$COLOR_RESET"
+    printf "$LOG_PATTERN" "$MARK_KO" "$SUITE_NAME" >> $REPORT
+    FAILED="$SUITE_NAME $FAILED"
+  fi
+done
+
+if [ -n "$FAILED" ]; then
+  echo -e "${COLOR_NORMAL}There are failures : ${COLOR_FAILED}$FAILED${COLOR_RESET}"
+  exit 1
+fi
