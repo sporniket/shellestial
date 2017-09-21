@@ -10,7 +10,7 @@ Content
 4. Known issues
 5. Miscellanous
 
-##1. What is **Shellestial Test Runner**, and when to use it ?
+## 1. What is **Shellestial Test Runner**, and when to use it ?
 **Shellestial Test Runner** is a collection of bash shell scripts that help write test suites using bash.
 
 ### Shellestial Test Runner in action
